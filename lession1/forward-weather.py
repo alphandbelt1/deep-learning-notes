@@ -1853,6 +1853,59 @@ for epoch in range(epochs):
 print(f"\n   ✅ 训练完成！最终损失: {loss_history[-1]:.4f}")
 
 # ============================================================================
+# 🔬 额外演示：查看 Tensor 的核心属性
+# ============================================================================
+# 这部分演示注释中提到的 Tensor 五大属性：.data, .grad, .grad_fn, .device, .dtype
+
+print("\n" + "=" * 60)
+print("🔬 [演示] Tensor 的核心属性")
+print("=" * 60)
+
+# 1. 查看模型权重的属性
+print("\n📊 模型第一层权重 (model.fc1.weight) 的属性：")
+w = model.fc1.weight
+print(f"   .data    (底层数据)     : shape={w.data.shape}, 前3个值={w.data[0, :3].tolist()}")
+print(f"   .grad    (梯度)         : shape={w.grad.shape if w.grad is not None else 'None'}")
+print(f"   .grad_fn (计算图父节点) : {w.grad_fn}")  # 参数没有 grad_fn，只有中间结果有
+print(f"   .device  (存储位置)     : {w.device}")
+print(f"   .dtype   (数据类型)     : {w.dtype}")
+print(f"   .requires_grad          : {w.requires_grad}")
+
+# 2. 查看中间计算结果的属性（有 grad_fn）
+print("\n📊 前向传播中间结果的属性：")
+# 做一次前向传播，查看中间 Tensor
+sample_input = X_tensor[:1]  # 取第一个样本
+intermediate = model.fc1(sample_input)  # fc1 的输出（ReLU 之前）
+print(f"   中间结果 intermediate = fc1(x)")
+print(f"   .data    (底层数据)     : {intermediate.data}")
+print(f"   .grad_fn (计算图父节点) : {intermediate.grad_fn}")  # ← 这里有值！
+print(f"   .device  (存储位置)     : {intermediate.device}")
+print(f"   .dtype   (数据类型)     : {intermediate.dtype}")
+
+# 3. 查看损失的属性
+print("\n📊 损失值 (loss) 的属性：")
+# 重新计算一次 loss 来演示
+with torch.enable_grad():
+    demo_output = model(X_tensor[:5])
+    demo_loss = criterion(demo_output, y_tensor[:5])
+print(f"   loss 的值              : {demo_loss.item():.4f}")
+print(f"   .grad_fn (计算图父节点) : {demo_loss.grad_fn}")
+print(f"   .requires_grad          : {demo_loss.requires_grad}")
+
+# 4. 对比：普通 Tensor vs 需要梯度的 Tensor
+print("\n📊 对比：普通 Tensor vs 需要梯度的 Tensor")
+normal_tensor = torch.tensor([1.0, 2.0, 3.0])
+grad_tensor = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
+print(f"   普通 Tensor:    requires_grad={normal_tensor.requires_grad}, grad_fn={normal_tensor.grad_fn}")
+print(f"   需要梯度 Tensor: requires_grad={grad_tensor.requires_grad}, grad_fn={grad_tensor.grad_fn}")
+
+# 计算后产生 grad_fn
+result = grad_tensor * 2 + 1
+print(f"   计算后的结果:   requires_grad={result.requires_grad}, grad_fn={result.grad_fn}")
+
+print("\n" + "=" * 60)
+
+# ============================================================================
 # 🧪 第七步：测试模型 —— 看看学到了什么
 # ============================================================================
 # 🔑 训练时用的数据，测试时要用"新"数据
